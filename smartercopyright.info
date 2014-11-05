@@ -1,0 +1,5 @@
+name = Smarter Copyright
+description = Creates a block with a server-generated year and a configurable copyright statement. Configure it on the blocks page.
+package = Other
+core = 7.x
+dependencies[] = block

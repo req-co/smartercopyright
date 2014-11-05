@@ -1,0 +1,115 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ *
+ */
+function smartercopyright_theme($existing, $type, $theme, $path) {
+  return array(
+    'smartercopyright' => array(
+      'variables' => array (
+          'copyright' => NULL,
+        ),
+      'template' => 'smartercopyright',  //see smartercopyright.tpl.php
+      'path' => drupal_get_path('module', 'smartercopyright')
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ *
+ */
+function smartercopyright_block_info() {
+  $blocks['copyright_statement'] = array(
+    'info' => t('Copyright Statement'),
+    'cache' => DRUPAL_CACHE_PER_ROLE, // default
+  );
+  return $blocks;
+}
+
+/**
+ * Implementation of hook_block_configure().
+ */
+function smartercopyright_block_configure($delta) {
+  if ($delta == 'copyright_statement') {
+    $sitename = variable_get('site_name', FALSE); //used in the default setting
+    $sitename = ($sitename) ? $sitename . '. ' : '';
+    $form['title'] = array(
+      '#type' => 'hidden',
+      '#title' => t('Copyright statement'),
+      '#size' => 60,
+      '#maxlength' => 60,
+      '#description' => t('The title should never be set on this block.'),
+    );
+    $form['copyright_string'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Copyright statement'),
+      '#maxlength' => 600,
+      '#description' => t('The rest of the copyright statement, as it should appear after the year.'),
+      '#default_value' => variable_get('copyright_string',  t($sitename . 'All rights reserved.')),
+    );
+    $form['start_year'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Start Year'),
+      '#size' => 4,
+      '#maxlength' => 4,
+      '#description' => t('Optionally include a starting year for the copyright period.'),
+      '#default_value' => variable_get('start_year', NULL),
+    );
+    return $form;
+  }
+}
+
+/**
+ * Implementation of hook_block_save().
+ */
+function smartercopyright_block_save($delta = '', $edit = array()) {
+  if ($delta == 'copyright_statement') {
+    variable_set('copyright_string', $edit['copyright_string']);
+    variable_set('start_year', $edit['start_year']);
+  }
+}
+
+/**
+ * Implementation of hook_block_view().
+ *
+ */
+function smartercopyright_block_view($delta = '') {
+  if ($delta == 'copyright_statement') {
+    $block['subject'] = t(''); //always suppressing the title
+    $sitename = variable_get('site_name', FALSE); //used in the default setting
+    $sitename = ($sitename) ? $sitename . '. ' : '';
+
+    //get the multilinagual variable if enabled
+    if (module_exists('variable')) {
+      $copyright = variable_get_value('copyright_string');
+    } else {
+      $copyright = variable_get('copyright_string',  t($sitename. 'All rights reserved.'));
+    }
+    $startyear = variable_get('start_year', NULL);
+
+    $block['content'] = theme('smartercopyright', array(
+      'copyright' => $copyright,
+      'startyear' => $startyear
+      )
+    );
+  }
+  return $block;
+}
+
+// makes the text translatable if the varaible modue is enabled
+if (module_exists('variable')) {
+/**
+ * Implements hook_variable_info().
+ */
+  function smartercopyright_variable_info($options) {
+    $variable['copyright_string'] = array(
+      'title' => t('Copyright statement'),
+      'type' => 'text',
+      'description' => t('Text for the copyright statement'),
+      'localize' => TRUE,
+    );
+    return $variable;
+  }
+}
